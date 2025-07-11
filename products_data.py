@@ -87,7 +87,7 @@ def get_basket(article: int) -> str:
 def get_photo_url(article: int) -> str:
     basket = get_basket(article)
     url = f"{basket}/images/big/1.webp"
-    photo_url = f'=ARRAYFORMULA(IMAGE("{photo_url}"))'
+    photo_url = f'=ARRAYFORMULA(IMAGE("{url}"))'
     return photo_url
 
 def _get_product_data(article: int, wallet_percent: int) -> Product:
