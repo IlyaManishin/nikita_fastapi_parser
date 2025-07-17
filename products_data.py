@@ -17,7 +17,7 @@ class Product(BaseModel):
     seller_name: str
     url: str
     price: int
-
+    
 
 def get_basket(article: int) -> str:
     vol = int(article / 100000)
@@ -84,6 +84,21 @@ def get_basket(article: int) -> str:
 
     return basket
 
+def get_seller_name(article: int) -> str:
+    basket = get_basket(article)
+    url = f"{basket}/info/sellers.json"
+    try:
+        resp = requests.get(url)
+        if resp.status_code != 200: 
+            return "-"
+
+        data = json.loads(resp.text)
+        seller_name = data["supplierName"]
+        return seller_name
+    except:
+        return "-"
+        
+
 def get_photo_url(article: int) -> str:
     basket = get_basket(article)
     url = f"{basket}/images/big/1.webp"
@@ -126,7 +141,7 @@ def _get_product_data(article: int, wallet_percent: int) -> Product:
     product = Product(article=article,
                       photo_url=photo_url,
                       category=product_data.get("name", ""),
-                      seller_name=product_data.get("supplier", ""),
+                      seller_name=get_seller_name(article),
                       url=f"https://www.wildberries.ru/catalog/{article}/detail.aspx",
                       price=0)
     sizes = product_data.get("sizes", [])
