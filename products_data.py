@@ -84,28 +84,37 @@ def get_basket(article: int) -> str:
 
     return basket
 
-def get_seller_name(article: int) -> str:
-    basket = get_basket(article)
-    url = f"{basket}/info/sellers.json"
+def safe_requests_get(url: str) -> dict:
     try:
         resp = requests.get(url)
         if resp.status_code != 200: 
             return "-"
 
         data = json.loads(resp.text)
-        seller_name = data["supplierName"]
-        return seller_name
+        return data
     except:
-        return "-"
-        
+        return None
 
-def get_photo_url(article: int) -> str:
-    basket = get_basket(article)
+def get_seller_name(basket: str) -> str:
+    url = f"{basket}/info/sellers.json"
+    data = safe_requests_get(url)
+    if not data:
+        return "-"
+    return data.get("supplierName", "-")
+
+def get_category(basket: str) -> str:
+    url = f"{basket}/info/ru/card.json"
+    data = safe_requests_get(url)
+    if not data:
+        return "-"
+    return data.get("subj_name", "-")
+
+def get_photo_url(basket: str) -> str:
     url = f"{basket}/images/big/1.webp"
     photo_url = f'=ARRAYFORMULA(IMAGE("{url}"))'
     return photo_url
 
-def _get_product_data(article: int, wallet_percent: int) -> Product:
+def _get_product_data(article: int) -> Product:
     tryings = 5
     data = None
     is_valid = False
@@ -128,7 +137,8 @@ def _get_product_data(article: int, wallet_percent: int) -> Product:
                 break
             time.sleep(10)
 
-    photo_url = get_photo_url(article)
+    basket = get_basket(article)
+    photo_url = get_photo_url(basket)
     if not is_valid:
         product = Product(article=article,
                           photo_url=photo_url,
@@ -140,16 +150,14 @@ def _get_product_data(article: int, wallet_percent: int) -> Product:
 
     product = Product(article=article,
                       photo_url=photo_url,
-                      category=product_data.get("name", ""),
-                      seller_name=get_seller_name(article),
+                      category=get_category(basket),
+                      seller_name=get_seller_name(basket),
                       url=f"https://www.wildberries.ru/catalog/{article}/detail.aspx",
                       price=0)
     sizes = product_data.get("sizes", [])
     if len(sizes) > 0:
         size = sizes[0]
-        price = size.get("price", {}).get("product", 0) // 100
-        wallet_price = price * (100 - wallet_percent) // 100
-        product.price = wallet_price
+        product.price = size.get("price", {}).get("product", 0) // 100
     return product
 
 
@@ -163,13 +171,13 @@ def _get_product_task(article: int, *args):
     return
 
 
-def get_products(articles: List[int], wallet_percent: int = 2) -> List[Product]:
+def get_products(articles: List[int]) -> List[Product]:
     all_data = []
     with futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
         all_futures = []
         for article in articles:
             all_futures.append(executor.submit(
-                _get_product_task, article, wallet_percent))
+                _get_product_task, article))
         for future in futures.as_completed(all_futures):
             try:
                 res: Product = future.result()
