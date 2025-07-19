@@ -17,7 +17,7 @@ class Product(BaseModel):
     seller_name: str
     url: str
     price: int
-    
+
 
 def get_basket(article: int) -> str:
     vol = int(article / 100000)
@@ -84,16 +84,18 @@ def get_basket(article: int) -> str:
 
     return basket
 
+
 def safe_requests_get(url: str) -> dict:
     try:
         resp = requests.get(url)
-        if resp.status_code != 200: 
+        if resp.status_code != 200:
             return "-"
 
         data = json.loads(resp.text)
         return data
     except:
         return None
+
 
 def get_seller_name(basket: str) -> str:
     url = f"{basket}/info/sellers.json"
@@ -102,6 +104,7 @@ def get_seller_name(basket: str) -> str:
         return "-"
     return data.get("supplierName", "-")
 
+
 def get_category(basket: str) -> str:
     url = f"{basket}/info/ru/card.json"
     data = safe_requests_get(url)
@@ -109,10 +112,12 @@ def get_category(basket: str) -> str:
         return "-"
     return data.get("subj_name", "-")
 
+
 def get_photo_url(basket: str) -> str:
     url = f"{basket}/images/big/1.webp"
     photo_url = f'=ARRAYFORMULA(IMAGE("{url}"))'
     return photo_url
+
 
 def _get_product_data(article: int) -> Product:
     tryings = 5
@@ -188,6 +193,7 @@ def get_products(articles: List[int]) -> List[Product]:
             except Exception as err:
                 logging.exception(err)
     return all_data
+
 
 def get_product_photos(articles: List[int]) -> List[str]:
     result = [get_photo_url(article) for article in articles]
