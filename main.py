@@ -7,7 +7,7 @@ app = FastAPI()
 
 
 @app.post("/products/")
-def get_products_data(articles: List[int]):
+def get_products_data(articles: List[int]) -> list[products_data.Product]:
     products = products_data.get_products(articles)
     return products
 

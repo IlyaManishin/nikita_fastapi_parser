@@ -17,6 +17,7 @@ class Product(BaseModel):
     seller_name: str
     url: str
     price: int
+    stocks: int
 
 
 def get_basket(article: int) -> str:
@@ -118,7 +119,21 @@ def get_photo_url(basket: str) -> str:
     photo_url = f'=ARRAYFORMULA(IMAGE("{url}"))'
     return photo_url
 
-
+def get_products_stocks(product_data: dict) -> int:
+    # return product_data.get("totalQuantity", 0)
+    quantity = 0
+    try:
+        sizes = product_data.get("sizes", [])
+        for i in sizes:
+            stocks = i.get("stocks", [])    
+            for j in stocks:
+                quantity += j.get("qty", 0) 
+    except:
+        pass
+    return quantity
+        
+    
+    
 def _get_product_data(article: int) -> Product:
     tryings = 5
     data = None
@@ -127,14 +142,14 @@ def _get_product_data(article: int) -> Product:
     for i in range(tryings):
         status = None
         try:
-            url = f'https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-1257218&spp=30&nm={article}'
+            url = f"https://card.wb.ru/cards/v4/detail?appType=1&curr=rub&dest=-380708&spp=30&lang=ru&nm={article}"
             resp = requests.get(url)
             status = resp.status_code
             if status != 200:
                 raise Exception()
             text = resp.text
             data = json.loads(text)
-            product_data: dict = data['data']['products'][0]
+            product_data: dict = data['products'][0]
             is_valid = True
             break
         except:
@@ -150,7 +165,8 @@ def _get_product_data(article: int) -> Product:
                           category="-",
                           seller_name="-",
                           url=f"https://www.wildberries.ru/catalog/{article}/detail.aspx",
-                          price=0)
+                          price=0, 
+                          stocks=0)
         return product
 
     product = Product(article=article,
@@ -158,7 +174,8 @@ def _get_product_data(article: int) -> Product:
                       category=get_category(basket),
                       seller_name=get_seller_name(basket),
                       url=f"https://www.wildberries.ru/catalog/{article}/detail.aspx",
-                      price=0)
+                      price=0,
+                      stocks=get_products_stocks(product_data))
     sizes = product_data.get("sizes", [])
     if len(sizes) > 0:
         size = sizes[0]

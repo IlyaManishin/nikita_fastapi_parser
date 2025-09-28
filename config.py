@@ -38,6 +38,3 @@ class Parser(ConfigParser):
             return None
         return self["DEFAULT"][key]
 
-
-if __name__ == "__main__":
-    pass
