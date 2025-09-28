@@ -1,12 +1,20 @@
 import os
 from configparser import ConfigParser
-import typing
+import logging
 
 CONFIG_PATH = "config.ini"
 if not os.path.exists(CONFIG_PATH):
     file = open(CONFIG_PATH, "w")
     file.close()
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler("logger.log"),
+    ]
+)
 
 class Parser(ConfigParser):
     def __init__(self, file_path: str | None):
