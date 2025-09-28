@@ -213,5 +213,5 @@ def get_products(articles: List[int]) -> List[Product]:
 
 
 def get_product_photos(articles: List[int]) -> List[str]:
-    result = [get_photo_url(article) for article in articles]
+    result = [get_photo_url(get_basket(article)) for article in articles]
     return result
