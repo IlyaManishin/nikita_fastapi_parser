@@ -18,6 +18,20 @@ class Product(BaseModel):
     url: str
     price: int
     stocks: int
+    spp_percent: float
+    
+class Size(BaseModel):
+    price: float
+    discountedPrice: float
+
+class ArticlePrice(BaseModel):
+    nmId: int
+    discount: float
+    price: float
+    discountedPrice: float
+    size: str
+
+    
 
 
 def get_basket(article: int) -> str:
@@ -119,22 +133,22 @@ def get_photo_url(basket: str) -> str:
     photo_url = f'=ARRAYFORMULA(IMAGE("{url}"))'
     return photo_url
 
+
 def get_products_stocks(product_data: dict) -> int:
     # return product_data.get("totalQuantity", 0)
     quantity = 0
     try:
         sizes = product_data.get("sizes", [])
         for i in sizes:
-            stocks = i.get("stocks", [])    
+            stocks = i.get("stocks", [])
             for j in stocks:
-                quantity += j.get("qty", 0) 
+                quantity += j.get("qty", 0)
     except:
         pass
     return quantity
-        
-    
-    
-def _get_product_data(article: int) -> Product:
+
+
+def _get_product_data(article: int, prices_data: List[ArticlePrice]) -> Product:
     tryings = 5
     data = None
     is_valid = False
@@ -165,8 +179,9 @@ def _get_product_data(article: int) -> Product:
                           category="-",
                           seller_name="-",
                           url=f"https://www.wildberries.ru/catalog/{article}/detail.aspx",
-                          price=0, 
-                          stocks=0)
+                          price=0,
+                          stocks=0,
+                          spp_percent=0)
         return product
 
     product = Product(article=article,
@@ -175,7 +190,8 @@ def _get_product_data(article: int) -> Product:
                       seller_name=get_seller_name(basket),
                       url=f"https://www.wildberries.ru/catalog/{article}/detail.aspx",
                       price=0,
-                      stocks=get_products_stocks(product_data))
+                      stocks=get_products_stocks(product_data),
+                      spp_percent=0)
     sizes = product_data.get("sizes", [])
     if len(sizes) > 0:
         size = sizes[0]
@@ -193,13 +209,68 @@ def _get_product_task(article: int, *args):
     return
 
 
-def get_products(articles: List[int]) -> List[Product]:
+def get_prices_data(token: str) -> List[ArticlePrice]:
+    headers = {"Authorization": token}
+    limit = 500
+    offset = 0
+    all_list_goods = []
+
+    while True:
+        tryings = 3
+        resp_data = None
+        for _ in range(tryings):
+            try:
+                url = f"https://discounts-prices-api.wildberries.ru/api/v2/list/goods/filter?limit={limit}&offset={offset}"
+                resp = requests.get(url, headers=headers, timeout=10)
+                resp.raise_for_status()
+                resp_data = resp.json()["data"]["listGoods"]
+                break
+            except Exception:
+                time.sleep(10)
+
+        if not resp_data:
+            break
+
+        all_list_goods += resp_data
+        if len(resp_data) < limit:
+            break
+        offset += limit
+
+    result: List[ArticlePrice] = []
+
+    for item in all_list_goods:
+        nm_id = item["nmID"]
+        discount = item.get("discount", 0)
+        price_retail = 0
+        discounted_price = 0
+        size_name = ""
+        if item.get("sizes"):
+            size = item["sizes"][0]
+            size_name = size.get("techSizeName", "")
+            price_retail = size.get("price", 0)
+            discounted_price = size.get("discountedPrice", 0)
+
+        article_price = ArticlePrice(
+            nmId=nm_id,
+            discount=discount,
+            price=price_retail,
+            discountedPrice=discounted_price,
+            size=size_name
+        )
+        result.append(article_price)
+
+    return result
+
+
+
+def get_products(articles: List[int], token) -> List[Product]:
     all_data = []
+    prices_data = get_prices_data(token)
     with futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
         all_futures = []
         for article in articles:
             all_futures.append(executor.submit(
-                _get_product_task, article))
+                _get_product_task, article, prices_data))
         for future in futures.as_completed(all_futures):
             try:
                 res: Product = future.result()
