@@ -239,7 +239,7 @@ def _get_product_task(article: int, *args):
 
 def get_prices_data(token: str) -> List[ArticlePrice]:
     headers = {"Authorization": token}
-    limit = 500
+    limit = 1000
     offset = 0
     all_list_goods = []
 
@@ -256,7 +256,7 @@ def get_prices_data(token: str) -> List[ArticlePrice]:
             except Exception:
                 pass
             finally:
-                time.sleep(10)
+                time.sleep(7)
 
         if not resp_data:
             break
