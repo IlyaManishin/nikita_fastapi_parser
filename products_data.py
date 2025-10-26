@@ -135,7 +135,6 @@ def get_photo_url(basket: str) -> str:
 
 
 def get_products_stocks(product_data: dict) -> int:
-    # return product_data.get("totalQuantity", 0)
     quantity = 0
     try:
         sizes = product_data.get("sizes", [])
@@ -174,7 +173,7 @@ def get_spp_percent(nm_id: int, product_data: dict, prices_data: List[ArticlePri
         if spp_price == 0:
             spp_percent = 0
         else:
-            spp_percent = int(round((100 * (1 - (spp_price / price)))))
+            spp_percent = round((100 * (1 - (spp_price / price))), 2)
     except:
         spp_percent = 0
     return spp_percent
@@ -255,6 +254,8 @@ def get_prices_data(token: str) -> List[ArticlePrice]:
                 resp_data = resp.json()["data"]["listGoods"]
                 break
             except Exception:
+                pass
+            finally:
                 time.sleep(10)
 
         if not resp_data:
