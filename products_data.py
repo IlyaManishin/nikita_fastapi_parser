@@ -16,22 +16,22 @@ class Product(BaseModel):
     category: str
     seller_name: str
     url: str
-    price: int
+    price: int  # spp price
     stocks: int
     spp_percent: float
-    
+
+
 class Size(BaseModel):
     price: float
     discountedPrice: float
 
-class ArticlePrice(BaseModel):
-    nmId: int
-    discount: float
-    price: float
-    discountedPrice: float
-    size: str
 
-    
+class ArticlePrice(BaseModel):
+    nm_id: int
+    discount: float
+    price_retail: float
+    discounted_price: float
+    size: str
 
 
 def get_basket(article: int) -> str:
@@ -148,6 +148,38 @@ def get_products_stocks(product_data: dict) -> int:
     return quantity
 
 
+def get_spp_price(product_data: dict) -> int:
+    sizes = product_data.get("sizes", [])
+    if len(sizes) > 0:
+        size = sizes[0]
+        spp_price = size.get("price", {}).get("product", 0) // 100
+    return spp_price
+
+
+def get_spp_percent(nm_id: int, product_data: dict, prices_data: List[ArticlePrice]) -> float:
+    price_retail, sale_without_spp = 0, 0
+    for i in prices_data:
+        if i.nm_id == nm_id:
+            sale_without_spp = i.discount
+            price_retail = i.price_retail
+    try:
+        price = int(round(price_retail * (100 - sale_without_spp) / 100))
+    except:
+        price = 0
+
+    spp_price = get_spp_price(product_data)
+    try:
+        if spp_price == price:
+            spp_percent = 0
+        if spp_price == 0:
+            spp_percent = 0
+        else:
+            spp_percent = int(round((100 * (1 - (spp_price / price)))))
+    except:
+        spp_percent = 0
+    return spp_percent
+
+
 def _get_product_data(article: int, prices_data: List[ArticlePrice]) -> Product:
     tryings = 5
     data = None
@@ -189,13 +221,10 @@ def _get_product_data(article: int, prices_data: List[ArticlePrice]) -> Product:
                       category=get_category(basket),
                       seller_name=get_seller_name(basket),
                       url=f"https://www.wildberries.ru/catalog/{article}/detail.aspx",
-                      price=0,
+                      price=get_spp_price(product_data),
                       stocks=get_products_stocks(product_data),
-                      spp_percent=0)
-    sizes = product_data.get("sizes", [])
-    if len(sizes) > 0:
-        size = sizes[0]
-        product.price = size.get("price", {}).get("product", 0) // 100
+                      spp_percent=get_spp_percent(article, product_data, prices_data))
+
     return product
 
 
@@ -251,16 +280,15 @@ def get_prices_data(token: str) -> List[ArticlePrice]:
             discounted_price = size.get("discountedPrice", 0)
 
         article_price = ArticlePrice(
-            nmId=nm_id,
+            nm_id=nm_id,
             discount=discount,
-            price=price_retail,
-            discountedPrice=discounted_price,
+            price_retail=price_retail,
+            discounted_price=discounted_price,
             size=size_name
         )
         result.append(article_price)
 
     return result
-
 
 
 def get_products(articles: List[int], token) -> List[Product]:
