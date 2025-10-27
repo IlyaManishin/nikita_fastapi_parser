@@ -237,7 +237,7 @@ def _get_product_task(article: int, *args):
     return
 
 
-def get_prices_data(token: str) -> List[ArticlePrice]:
+def _get_token_prices_data(token: str) -> List[ArticlePrice]:
     headers = {"Authorization": token}
     limit = 1000
     offset = 0
@@ -291,10 +291,25 @@ def get_prices_data(token: str) -> List[ArticlePrice]:
 
     return result
 
+def get_prices_data(tokens: list[str]):
+    results = []
 
-def get_products(articles: List[int], token) -> List[Product]:
+    with futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
+        all_futures = [executor.submit(_get_token_prices_data, token) for token in tokens]
+        for future in futures.as_completed(all_futures):
+            try:
+                data = future.result()
+                if data:
+                    results += data
+            except Exception as err:
+                logging.exception(err)
+
+    return results
+
+
+def get_products(articles: List[int], tokens: list[str]) -> List[Product]:
     all_data = []
-    prices_data = get_prices_data(token)
+    prices_data = get_prices_data(tokens)
     with futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
         all_futures = []
         for article in articles:
