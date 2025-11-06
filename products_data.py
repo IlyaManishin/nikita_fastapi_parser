@@ -6,6 +6,7 @@ import time
 import json
 import logging
 
+from prices_parser import get_prices_data, ArticlePrice
 
 MAX_THREADS = 10
 
@@ -24,14 +25,6 @@ class Product(BaseModel):
 class Size(BaseModel):
     price: float
     discountedPrice: float
-
-
-class ArticlePrice(BaseModel):
-    nm_id: int
-    discount: float
-    price_retail: float
-    discounted_price: float
-    size: str
 
 
 def get_basket(article: int) -> str:
@@ -237,79 +230,9 @@ def _get_product_task(article: int, *args):
     return
 
 
-def _get_token_prices_data(token: str) -> List[ArticlePrice]:
-    headers = {"Authorization": token}
-    limit = 1000
-    offset = 0
-    all_list_goods = []
-
-    while True:
-        tryings = 3
-        resp_data = None
-        for _ in range(tryings):
-            try:
-                url = f"https://discounts-prices-api.wildberries.ru/api/v2/list/goods/filter?limit={limit}&offset={offset}"
-                resp = requests.get(url, headers=headers, timeout=10)
-                resp.raise_for_status()
-                resp_data = resp.json()["data"]["listGoods"]
-                break
-            except Exception:
-                pass
-            finally:
-                time.sleep(7)
-
-        if not resp_data:
-            break
-
-        all_list_goods += resp_data
-        if len(resp_data) < limit:
-            break
-        offset += limit
-
-    result: List[ArticlePrice] = []
-
-    for item in all_list_goods:
-        nm_id = item["nmID"]
-        discount = item.get("discount", 0)
-        price_retail = 0
-        discounted_price = 0
-        size_name = ""
-        if item.get("sizes"):
-            size = item["sizes"][0]
-            size_name = size.get("techSizeName", "")
-            price_retail = size.get("price", 0)
-            discounted_price = size.get("discountedPrice", 0)
-
-        article_price = ArticlePrice(
-            nm_id=nm_id,
-            discount=discount,
-            price_retail=price_retail,
-            discounted_price=discounted_price,
-            size=size_name
-        )
-        result.append(article_price)
-
-    return result
-
-def get_prices_data(tokens: list[str]):
-    results = []
-
-    with futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
-        all_futures = [executor.submit(_get_token_prices_data, token) for token in tokens]
-        for future in futures.as_completed(all_futures):
-            try:
-                data = future.result()
-                if data:
-                    results += data
-            except Exception as err:
-                logging.exception(err)
-
-    return results
-
-
 def get_products(articles: List[int], tokens: list[str]) -> List[Product]:
     all_data = []
-    prices_data = get_prices_data(tokens)
+    prices_data = get_prices_data()
     with futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
         all_futures = []
         for article in articles:
