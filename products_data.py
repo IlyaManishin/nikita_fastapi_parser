@@ -28,69 +28,20 @@ class Size(BaseModel):
 
 
 def get_basket(article: int) -> str:
-    vol = int(article / 100000)
-    part = int(article / 1000)
+    vol = article // 100000
+    part = article // 1000
 
-    if vol <= 143:
-        basket = f"https://basket-01.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 287:
-        basket = f"https://basket-02.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 431:
-        basket = f"https://basket-03.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 719:
-        basket = f"https://basket-04.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 1007:
-        basket = f"https://basket-05.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 1061:
-        basket = f"https://basket-06.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 1115:
-        basket = f"https://basket-07.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 1169:
-        basket = f"https://basket-08.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 1313:
-        basket = f"https://basket-09.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 1601:
-        basket = f"https://basket-10.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 1655:
-        basket = f"https://basket-11.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 1919:
-        basket = f"https://basket-12.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 2045:
-        basket = f"https://basket-13.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 2189:
-        basket = f"https://basket-14.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 2405:
-        basket = f"https://basket-15.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 2621:
-        basket = f"https://basket-16.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 2837:
-        basket = f"https://basket-17.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 3053:
-        basket = f"https://basket-18.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 3269:
-        basket = f"https://basket-19.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 3485:
-        basket = f"https://basket-20.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 3701:
-        basket = f"https://basket-21.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 3917:
-        basket = f"https://basket-22.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 4133:
-        basket = f"https://basket-23.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 4349:
-        basket = f"https://basket-24.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 4565:
-        basket = f"https://basket-25.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 4877:
-        basket = f"https://basket-26.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 5189:
-        basket = f"https://basket-27.wbbasket.ru/vol{vol}/part{part}/{article}"
-    elif vol <= 5501:
-        basket = f"https://basket-28.wbbasket.ru/vol{vol}/part{part}/{article}"
-    else:
-        basket = f"https://basket-29.wbbasket.ru/vol{vol}/part{part}/{article}"
+    limits = [
+        143, 287, 431, 719, 1007, 1061, 1115, 1169, 1313, 1601,
+        1655, 1919, 2045, 2189, 2405, 2621, 2837, 3053, 3269, 3485,
+        3701, 3917, 4133, 4349, 4565, 4877, 5189, 5501, 5813, 6125,
+        6437, 6749, 7061, 7373, 7685, 7997, 8309
+    ]
 
-    return basket
+    basket_num = next((i + 1 for i, v in enumerate(limits) if vol <= v), 38)
+
+    return f"https://basket-{basket_num:02d}.wbbasket.ru/vol{vol}/part{part}/{article}"
+
 
 
 def safe_requests_get(url: str) -> dict:
@@ -253,3 +204,5 @@ def get_products(articles: List[int], tokens: list[str]) -> List[Product]:
 def get_product_photos(articles: List[int]) -> List[str]:
     result = [get_photo_url(get_basket(article)) for article in articles]
     return result
+
+print(get_basket(707022674))
