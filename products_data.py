@@ -27,21 +27,59 @@ class Size(BaseModel):
     discountedPrice: float
 
 
-def get_basket(article: int) -> str:
+def get_basket(article, isFull=True):
     vol = article // 100000
     part = article // 1000
 
-    limits = [
-        143, 287, 431, 719, 1007, 1061, 1115, 1169, 1313, 1601,
-        1655, 1919, 2045, 2189, 2405, 2621, 2837, 3053, 3269, 3485,
-        3701, 3917, 4133, 4349, 4565, 4877, 5189, 5501, 5813, 6125,
-        6437, 6749, 7061, 7373, 7685, 7997, 8309
+    basket_ranges = [
+        (143, "01"),
+        (287, "02"),
+        (431, "03"),
+        (719, "04"),
+        (1007, "05"),
+        (1061, "06"),
+        (1115, "07"),
+        (1169, "08"),
+        (1313, "09"),
+        (1601, "10"),
+        (1655, "11"),
+        (1919, "12"),
+        (2045, "13"),
+        (2189, "14"),
+        (2405, "15"),
+        (2621, "16"),
+        (2837, "17"),
+        (3053, "18"),
+        (3269, "19"),
+        (3485, "20"),
+        (3701, "21"),
+        (3917, "22"),
+        (4133, "23"),
+        (4349, "24"),
+        (4565, "25"),
+        (4877, "26"),
+        (5189, "27"),
+        (5501, "28"),
+        (5813, "29"),
+        (6125, "30"),
+        (6437, "31"),
+        (6749, "32"),
+        (7061, "33"),
+        (7373, "34"),
+        (7685, "35"),
+        (7997, "36"),
+        (8309, "37"),
+        (8741, "38"),
+        (9173, "39"),
+        (9605, "40"),
     ]
 
-    basket_num = next((i + 1 for i, v in enumerate(limits) if vol <= v), 38)
-
-    return f"https://basket-{basket_num:02d}.wbbasket.ru/vol{vol}/part{part}/{article}"
-
+    basket_id = "41"
+    for limit, b_id in basket_ranges:
+        if vol <= limit:
+            basket_id = b_id
+            break
+    return f"https://basket-{basket_id}.wbbasket.ru/vol{vol}/part{part}/{article}"
 
 
 def safe_requests_get(url: str) -> dict:
@@ -204,5 +242,3 @@ def get_products(articles: List[int], tokens: list[str]) -> List[Product]:
 def get_product_photos(articles: List[int]) -> List[str]:
     result = [get_photo_url(get_basket(article)) for article in articles]
     return result
-
-print(get_basket(707022674))
