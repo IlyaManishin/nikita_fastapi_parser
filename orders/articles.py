@@ -1,8 +1,7 @@
 import logging
 from dataclasses import dataclass
 from typing import List
-import utils
-import time
+from . import utils
 
 
 CARDS_LIST_URL = "https://content-api.wildberries.ru/content/v2/get/cards/list"
@@ -106,7 +105,6 @@ def get_articles_by_token(token: str) -> List[Article]:
             return []
 
         all_cards.extend(resp["cards"])
-
         cursor = resp["cursor"]
         if cursor["total"] < 100:
             is_end = True

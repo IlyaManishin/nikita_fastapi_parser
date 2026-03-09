@@ -9,6 +9,7 @@ import logging
 REQUEST_ATTEMPT_COUNT = 3
 REQUEST_WAIT_SEC = 5
 
+
 class UnathorizedExc(Exception):
     pass
 
@@ -61,7 +62,8 @@ def _send_request(url: str,
                 time.sleep(on_error_wait_sec)
                 continue
             logging.exception(err)
-    raise Exception(f"Invalid request: url={url}" + f", status={resp.status_code}" if resp else "")
+    raise Exception(
+        f"Invalid request: url={url}" + f", status={resp.status_code}" if resp else "")
 
 
 def api_get(url: str, headers: dict,
@@ -74,3 +76,4 @@ def api_post(url: str, headers: dict, body: dict,
              attempts: int = REQUEST_ATTEMPT_COUNT,
              req_wait_sec=REQUEST_WAIT_SEC) -> Union[list[dict], dict]:
     return _send_request(url, headers, attempts, req_wait_sec, RequestTypes.POST, body)
+

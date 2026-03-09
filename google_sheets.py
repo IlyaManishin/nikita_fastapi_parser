@@ -51,3 +51,26 @@ def get_wb_tokens() -> List[str]:
         except:
             continue
     return tokens
+
+def ensure_sheet_exists(spreadsheet_id: str, sheet_name: str):
+    meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    sheets = meta.get("sheets", [])
+
+    for s in sheets:
+        if s["properties"]["title"] == sheet_name:
+            return
+
+    service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={
+            "requests": [
+                {
+                    "addSheet": {
+                        "properties": {
+                            "title": sheet_name
+                        }
+                    }
+                }
+            ]
+        },
+    ).execute()

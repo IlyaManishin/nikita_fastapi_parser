@@ -27,7 +27,7 @@ class Size(BaseModel):
     discountedPrice: float
 
 
-def get_basket(article, isFull=True):
+def get_basket(article):
     vol = article // 100000
     part = article // 1000
 
