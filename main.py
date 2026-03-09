@@ -7,6 +7,7 @@ import logging
 
 import products_data
 from prices_parser import periodic_price_update
+from orders.orders_parser import period_sales_scheduler
 
 
 class ProductsRequest(BaseModel):
@@ -17,6 +18,8 @@ class ProductsRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     thread = Thread(target=periodic_price_update, daemon=True)
+    thread.start()
+    thread = Thread(target=period_sales_scheduler, daemon=True)
     thread.start()
     logging.info("Periodic price update thread started")
     yield
