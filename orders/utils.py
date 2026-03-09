@@ -4,8 +4,6 @@ import json
 from enum import Enum
 from typing import Union
 import logging
-from pydantic import BaseModel
-import os
 
 
 REQUEST_ATTEMPT_COUNT = 3
@@ -63,9 +61,7 @@ def _send_request(url: str,
                 time.sleep(on_error_wait_sec)
                 continue
             logging.exception(err)
-    logging.error(
-        f"Invalid request: url={url}" + f", status={resp.status_code}" if resp else "")
-    return None
+    raise Exception(f"Invalid request: url={url}" + f", status={resp.status_code}" if resp else "")
 
 
 def api_get(url: str, headers: dict,
